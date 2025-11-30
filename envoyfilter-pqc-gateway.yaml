@@ -1,0 +1,74 @@
+# EnvoyFilter to enable Post-Quantum Cryptography (X25519MLKEM768) at the edge
+# Apply to Istio Ingress Gateway for PQC-enabled TLS termination
+#
+# Supported ECDH curves:
+# - X25519MLKEM768 (hybrid PQC - ML-KEM-768 + X25519)
+# - X25519 (classical fallback)
+#
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: pqc-tls-gateway
+  namespace: istio-system  # Or your gateway namespace
+spec:
+  workloadSelector:
+    labels:
+      istio: ingressgateway  # Adjust to match your gateway
+  configPatches:
+    # Patch the TLS transport socket on HTTPS listeners
+    - applyTo: FILTER_CHAIN
+      match:
+        context: GATEWAY
+        listener:
+          portNumber: 443  # HTTPS port
+          filterChain:
+            transportProtocol: tls
+      patch:
+        operation: MERGE
+        value:
+          transport_socket:
+            name: envoy.transport_sockets.tls
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
+              common_tls_context:
+                tls_params:
+                  # Force TLS 1.3 for PQC support
+                  tls_minimum_protocol_version: TLSv1_3
+                  tls_maximum_protocol_version: TLSv1_3
+                  # ECDH curves with PQC hybrid as preferred
+                  ecdh_curves:
+                    - X25519MLKEM768     # Hybrid PQC (ML-KEM-768 + X25519)
+                    - X25519              # Fallback for non-PQC clients
+                  # Note: TLS 1.3 cipher suites are auto-selected, no need to specify
+---
+# Alternative: If you need to patch a specific named listener
+# Use this if the above doesn't work for your setup
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: pqc-tls-gateway-by-name
+  namespace: istio-system
+spec:
+  workloadSelector:
+    labels:
+      istio: ingressgateway
+  configPatches:
+    - applyTo: FILTER_CHAIN
+      match:
+        context: GATEWAY
+        listener:
+          name: "0.0.0.0_443"  # Adjust listener name as needed
+      patch:
+        operation: MERGE
+        value:
+          transport_socket:
+            name: envoy.transport_sockets.tls
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
+              common_tls_context:
+                tls_params:
+                  tls_minimum_protocol_version: TLSv1_3
+                  tls_maximum_protocol_version: TLSv1_3
+                  ecdh_curves:
+                    - X25519MLKEM768
+                    - X25519

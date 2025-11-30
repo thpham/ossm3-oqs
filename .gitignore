@@ -1,0 +1,25 @@
+# Test certificates
+certs/
+
+# Nix
+result
+.direnv/
+
+# Secrets
+pull-secret.json
+*.pem
+*.key
+
+# Build logs
+/tmp/
+*.log
+
+# Editor/IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store

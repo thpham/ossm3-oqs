@@ -1,0 +1,162 @@
+#
+# OpenSSL configuration with OQS Provider and PQC-enabled crypto policy
+#
+# This config enables Post-Quantum Cryptography by:
+# 1. Loading the OQS provider for PQC algorithms
+# 2. Using a custom crypto-policy backend that allows X25519MLKEM768
+#
+# Use by setting: OPENSSL_CONF=/etc/pki/tls/openssl-pqc.cnf
+#
+
+HOME = .
+openssl_conf = openssl_init
+config_diagnostics = 1
+oid_section = new_oids
+
+[ new_oids ]
+tsa_policy1 = 1.2.3.4.1
+tsa_policy2 = 1.2.3.4.5.6
+tsa_policy3 = 1.2.3.4.5.7
+
+[openssl_init]
+providers = provider_sect
+ssl_conf = ssl_module
+alg_section = evp_properties
+
+[ evp_properties ]
+
+[provider_sect]
+default = default_sect
+oqsprovider = oqsprovider_sect
+
+[default_sect]
+activate = 1
+
+[oqsprovider_sect]
+activate = 1
+module = /usr/lib64/ossl-modules/oqsprovider.so
+
+# Use PQC-enabled crypto policy (NOT the system FIPS policy)
+[ ssl_module ]
+system_default = crypto_policy
+
+[ crypto_policy ]
+.include = /etc/crypto-policies/back-ends/opensslcnf.config
+
+####################################################################
+[ ca ]
+default_ca = CA_default
+
+[ CA_default ]
+dir             = /etc/pki/CA
+certs           = $dir/certs
+crl_dir         = $dir/crl
+database        = $dir/index.txt
+new_certs_dir   = $dir/newcerts
+certificate     = $dir/cacert.pem
+serial          = $dir/serial
+crlnumber       = $dir/crlnumber
+crl             = $dir/crl.pem
+private_key     = $dir/private/cakey.pem
+x509_extensions = usr_cert
+name_opt        = ca_default
+cert_opt        = ca_default
+default_days    = 365
+default_crl_days= 30
+default_md      = sha256
+preserve        = no
+policy          = policy_match
+
+[ policy_match ]
+countryName             = match
+stateOrProvinceName     = match
+organizationName        = match
+organizationalUnitName  = optional
+commonName              = supplied
+emailAddress            = optional
+
+[ policy_anything ]
+countryName             = optional
+stateOrProvinceName     = optional
+localityName            = optional
+organizationName        = optional
+organizationalUnitName  = optional
+commonName              = supplied
+emailAddress            = optional
+
+####################################################################
+[ req ]
+default_bits            = 2048
+default_md              = sha256
+default_keyfile         = privkey.pem
+distinguished_name      = req_distinguished_name
+attributes              = req_attributes
+x509_extensions         = v3_ca
+string_mask             = utf8only
+
+[ req_distinguished_name ]
+countryName                     = Country Name (2 letter code)
+countryName_default             = XX
+countryName_min                 = 2
+countryName_max                 = 2
+stateOrProvinceName             = State or Province Name (full name)
+localityName                    = Locality Name (eg, city)
+localityName_default            = Default City
+0.organizationName              = Organization Name (eg, company)
+0.organizationName_default      = Default Company Ltd
+organizationalUnitName          = Organizational Unit Name (eg, section)
+commonName                      = Common Name (eg, your name or your server\'s hostname)
+commonName_max                  = 64
+emailAddress                    = Email Address
+emailAddress_max                = 64
+
+[ req_attributes ]
+challengePassword               = A challenge password
+challengePassword_min           = 4
+challengePassword_max           = 20
+unstructuredName                = An optional company name
+
+[ usr_cert ]
+basicConstraints=CA:FALSE
+subjectKeyIdentifier=hash
+authorityKeyIdentifier=keyid,issuer
+
+[ v3_req ]
+basicConstraints = CA:FALSE
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+
+[ v3_ca ]
+subjectKeyIdentifier=hash
+authorityKeyIdentifier=keyid:always,issuer
+basicConstraints = critical,CA:true
+
+[ crl_ext ]
+authorityKeyIdentifier=keyid:always
+
+[ proxy_cert_ext ]
+basicConstraints=CA:FALSE
+subjectKeyIdentifier=hash
+authorityKeyIdentifier=keyid,issuer
+proxyCertInfo=critical,language:id-ppl-anyLanguage,pathlen:3,policy:foo
+
+####################################################################
+[ tsa ]
+default_tsa = tsa_config1
+
+[ tsa_config1 ]
+dir             = /etc/pki/CA
+serial          = $dir/tsaserial
+crypto_device   = builtin
+signer_cert     = $dir/tsacert.pem
+certs           = $dir/cacert.pem
+signer_key      = $dir/private/tsakey.pem
+signer_digest   = sha256
+default_policy  = tsa_policy1
+other_policies  = tsa_policy2, tsa_policy3
+digests         = sha1, sha256, sha384, sha512
+accuracy        = secs:1, millisecs:500, microsecs:100
+clock_precision_digits = 0
+ordering        = yes
+tsa_name        = yes
+ess_cert_id_chain = no
+ess_cert_id_alg = sha256
