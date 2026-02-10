@@ -2,6 +2,8 @@
 
 Custom OpenShift Service Mesh 3 proxy image with OQS (Open Quantum Safe) provider for PQC-enabled TLS at the edge.
 
+> **Note**: This project is for **demonstration purposes only**. OpenShift Service Mesh is expected to provide native PQC support in a future release.
+
 ## Why Post-Quantum Cryptography?
 
 **["Harvest Now, Decrypt Later"](https://en.wikipedia.org/wiki/Harvest_now,_decrypt_later)** - Adversaries can capture encrypted traffic today and store it until quantum computers become powerful enough to break current encryption. Data with long-term sensitivity (healthcare, financial, government, intellectual property) is at risk now, not when quantum computers arrive.
@@ -25,6 +27,11 @@ Major organizations are already rolling out PQC:
 - **EU**: Roadmap with 2030/2035 deadlines
 
 **Don't wait for Q-Day** - protect long-lived data now with hybrid PQC (X25519MLKEM768).
+
+## Prerequisites
+
+- **OpenShift cluster must NOT be in FIPS mode** - FIPS mode restricts OpenSSL to FIPS-validated algorithms only, which excludes the post-quantum algorithms provided by the OQS provider.
+- **The base image is not included in this repository** - it requires a valid licensed OpenShift cluster with access to `registry.redhat.io/openshift-service-mesh/istio-proxyv2-rhel9`.
 
 ## Architecture
 
@@ -196,3 +203,4 @@ Test certificates are generated with ML-DSA-65 (`just certs`). Use `just certs-r
 - [NIST FIPS 204](https://csrc.nist.gov/pubs/fips/204/final) - ML-DSA Standard (Digital Signatures)
 - [OQS Provider](https://github.com/open-quantum-safe/oqs-provider)
 - [Istio EnvoyFilter](https://istio.io/latest/docs/reference/config/networking/envoy-filter/)
+- [Quantum-secure gateways in Red Hat OpenShift Service Mesh 3.2](https://developers.redhat.com/articles/2025/12/18/quantum-secure-gateways-openshift-service-mesh)
