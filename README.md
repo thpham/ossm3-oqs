@@ -40,8 +40,8 @@ Major organizations are already rolling out PQC:
 - **OpenShift Service Mesh 3** (OSSM 3) - uses OpenSSL for FIPS compliance
 - **Envoy builds with OpenSSL** - any Envoy compiled with `--define boringssl=disabled`
 
-> **Note**: Standard upstream Istio uses BoringSSL and is **not compatible** with this approach.
-> The OQS provider only works with OpenSSL.
+> **Note**: Since [Istio 1.25+](https://github.com/istio/istio/pull/55589), upstream Istio supports `X25519MLKEM768` natively via BoringSSL.
+> This project uses an alternative approach via the OQS provider on OpenSSL, which is specific to OpenShift Service Mesh (OSSM) builds.
 
 Base image: `registry.redhat.io/openshift-service-mesh/istio-proxyv2-rhel9` (OSSM 3.2.1 / Istio 1.27.3)
 
